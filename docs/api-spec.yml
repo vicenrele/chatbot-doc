@@ -1,0 +1,163 @@
+openapi: 3.0.3
+info:
+  title: Technical Documentation Chatbot API
+  version: 0.1.0
+  description: Optional service contract for the LangChain RAG pipeline. Streamlit may call these operations directly or use the same application services in-process.
+servers:
+  - url: http://localhost:8000
+    description: Local API when the application is split from Streamlit
+paths:
+  /health:
+    get:
+      summary: Check application and index readiness
+      operationId: getHealth
+      responses:
+        '200':
+          description: Service is available; readiness is reported in the response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+  /chat:
+    post:
+      summary: Answer a question using indexed documentation
+      operationId: chat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatRequest'
+      responses:
+        '200':
+          description: Grounded answer with source citations.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatResponse'
+        '400':
+          description: Invalid or oversized request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: No compatible indexed documentation is available.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Model or embedding provider rate limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /documents/index:
+    post:
+      summary: Build or update the document index
+      operationId: indexDocuments
+      responses:
+        '202':
+          description: Indexing accepted or completed by the local implementation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IndexResponse'
+        '400':
+          description: One or more files are invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    ChatRequest:
+      type: object
+      required: [question]
+      properties:
+        question:
+          type: string
+          minLength: 1
+          maxLength: 4000
+        conversation_id:
+          type: string
+          maxLength: 128
+        top_k:
+          type: integer
+          minimum: 1
+          maximum: 20
+          default: 4
+    ChatResponse:
+      type: object
+      required: [answer, grounded, sources, request_id]
+      properties:
+        answer:
+          type: string
+        grounded:
+          type: boolean
+        request_id:
+          type: string
+        sources:
+          type: array
+          items:
+            $ref: '#/components/schemas/SourceCitation'
+    SourceCitation:
+      type: object
+      required: [chunk_id, source_id, filename]
+      properties:
+        chunk_id:
+          type: string
+        source_id:
+          type: string
+        filename:
+          type: string
+        section:
+          type: string
+        page:
+          type: integer
+          minimum: 1
+        score:
+          type: number
+    HealthResponse:
+      type: object
+      required: [status, index_ready]
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+        index_ready:
+          type: boolean
+        indexed_documents:
+          type: integer
+          minimum: 0
+        embedding_model:
+          type: string
+    IndexResponse:
+      type: object
+      required: [status, indexed, skipped, failed]
+      properties:
+        status:
+          type: string
+          enum: [completed, partial, failed]
+        indexed:
+          type: integer
+          minimum: 0
+        skipped:
+          type: integer
+          minimum: 0
+        failed:
+          type: integer
+          minimum: 0
+        errors:
+          type: array
+          items:
+            type: string
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
