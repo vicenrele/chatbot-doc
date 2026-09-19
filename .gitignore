@@ -1,2 +1,8 @@
 .DS_Store
 .worktrees/
+.env
+data/documents/
+data/vector_store/
+__pycache__/
+.pytest_cache/
+*.egg-info/
