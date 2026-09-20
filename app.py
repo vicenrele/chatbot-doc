@@ -57,7 +57,8 @@ def main() -> None:
         with st.chat_message("user"):
             st.markdown(question)
         with st.chat_message("assistant"):
-            answer = _answer_question(settings, question)
+            with st.spinner("Generating answer..."):
+                answer = _answer_question(settings, question)
             st.markdown(answer.content)
             for source in answer.sources:
                 st.caption(_source_label(source))

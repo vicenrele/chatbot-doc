@@ -19,6 +19,7 @@ class Settings:
     documents_path: Path = Path("data/documents")
     index_path: Path = Path("data/vector_store")
     chat_model: str = "llama3.2"
+    chat_max_output_tokens: int = 512
     embedding_model: str = "nomic-embed-text"
     embedding_provider: str = "ollama"
     chat_provider: str = "ollama"
@@ -40,6 +41,7 @@ class Settings:
             documents_path=Path(values.get("DOCUMENTS_PATH", "data/documents")),
             index_path=Path(values.get("VECTOR_STORE_PATH", "data/vector_store")),
             chat_model=values.get("CHAT_MODEL", "llama3.2"),
+            chat_max_output_tokens=_integer(values, "CHAT_MAX_OUTPUT_TOKENS", 512),
             embedding_model=values.get("EMBEDDING_MODEL", "nomic-embed-text"),
             embedding_provider=values.get("EMBEDDING_PROVIDER", "ollama"),
             chat_provider=values.get("CHAT_PROVIDER", "ollama"),
@@ -65,6 +67,8 @@ class Settings:
             raise ConfigurationError("File limits must be positive")
         if self.max_question_length < 1 or self.max_context_characters < 1:
             raise ConfigurationError("Question and context limits must be positive")
+        if self.chat_max_output_tokens < 1:
+            raise ConfigurationError("CHAT_MAX_OUTPUT_TOKENS must be positive")
         if not self.embedding_model:
             raise ConfigurationError("EMBEDDING_MODEL is required")
         if not self.chat_model:

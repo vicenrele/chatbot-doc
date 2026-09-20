@@ -22,9 +22,10 @@ def test_local_providers_are_created_without_openai_key(monkeypatch: pytest.Monk
             self.model = model
 
     class FakeChat:
-        def __init__(self, model: str, temperature: int) -> None:
+        def __init__(self, model: str, temperature: int, num_predict: int) -> None:
             self.model = model
             self.temperature = temperature
+            self.num_predict = num_predict
 
     import langchain_ollama
 
@@ -41,6 +42,7 @@ def test_local_providers_are_created_without_openai_key(monkeypatch: pytest.Monk
 
     assert embeddings.model == "nomic-embed-text"
     assert model.model == "llama3.2"
+    assert model.num_predict == 512
 
 
 def test_openai_providers_remain_explicitly_supported(monkeypatch: pytest.MonkeyPatch) -> None:

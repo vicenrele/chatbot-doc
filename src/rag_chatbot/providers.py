@@ -52,7 +52,11 @@ def _create_chat_model(settings: Settings) -> Any:
             from langchain_ollama import ChatOllama
         except ImportError as error:
             raise ConfigurationError("The Ollama LangChain integration is not installed") from error
-        return ChatOllama(model=settings.chat_model, temperature=0)
+        return ChatOllama(
+            model=settings.chat_model,
+            temperature=0,
+            num_predict=settings.chat_max_output_tokens,
+        )
     if settings.chat_provider == "openai":
         try:
             from langchain_openai import ChatOpenAI
