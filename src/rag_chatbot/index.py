@@ -61,7 +61,7 @@ class SnapshotStore:
         if not manifest_path.exists() or not chunks_path.exists():
             raise IndexCompatibilityError("Index snapshot is incomplete; rebuild is required")
         actual = _manifest_from_dict(json.loads(manifest_path.read_text(encoding="utf-8")))
-        if actual != expected:
+        if actual.compatibility_key() != expected.compatibility_key():
             raise IndexCompatibilityError(
                 "Index configuration is incompatible; explicit rebuild is required"
             )
@@ -72,6 +72,23 @@ class SnapshotStore:
         return FAISS.load_local(
             str(self.path), embeddings, index_name="index", allow_dangerous_deserialization=True
         )
+
+    def is_compatible(self, expected: IndexManifest) -> bool:
+        try:
+            manifest_path = self.path / "index_manifest.json"
+            chunks_path = self.path / "chunks.json"
+            if not all((self.path / name).is_file() for name in ("index.faiss", "index.pkl")):
+                return False
+            if not manifest_path.is_file() or not chunks_path.is_file():
+                return False
+            actual = _manifest_from_dict(json.loads(manifest_path.read_text(encoding="utf-8")))
+            chunks = json.loads(chunks_path.read_text(encoding="utf-8"))
+            return (
+                actual.compatibility_key() == expected.compatibility_key()
+                and len(chunks) == actual.chunk_count
+            )
+        except (OSError, TypeError, ValueError):
+            return False
 
     def manifest(self) -> IndexManifest:
         return _manifest_from_dict(

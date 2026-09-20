@@ -27,7 +27,11 @@ Copy-Item .env.example .env
 streamlit run app.py
 ```
 
-Set `OPENAI_API_KEY`, `EMBEDDING_MODEL`, and `CHAT_MODEL` in `.env`. The first implementation supports OpenAI through LangChain's provider adapter; model and embedding identities are recorded in the FAISS manifest.
+The default local mode uses Ollama for chat and Hugging Face sentence-transformers for embeddings. Install and start Ollama, then pull the configured chat model (for example, `ollama pull llama3.2`). Set `CHAT_PROVIDER`, `CHAT_MODEL`, `EMBEDDING_PROVIDER`, and `EMBEDDING_MODEL` in `.env`; local mode does not require `OPENAI_API_KEY`. Model and embedding identities are recorded in the FAISS manifest.
+
+The local embedding model is downloaded from Hugging Face on first use. The Ollama server must be running locally before asking questions. To use OpenAI explicitly, set both providers to `openai`, choose the OpenAI model names, and provide `OPENAI_API_KEY`.
+
+When the configured embedding provider, model, dimensions, distance strategy, corpus, or ingestion version differs from the persisted manifest, the application rebuilds the FAISS snapshot before retrieval. A failed rebuild is reported safely and the incompatible snapshot is not loaded.
 
 To add files from the Streamlit sidebar, set `ADMIN_INGESTION_ENABLED=true`, select one or more Markdown/PDF files, and click **Add files and rebuild index**. The files are copied into `data/documents/` and become queryable after the rebuild completes. The control stays disabled by default.
 

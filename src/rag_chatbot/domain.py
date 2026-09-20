@@ -56,6 +56,17 @@ class IndexManifest:
     chunk_count: int
     created_at: datetime = field(default_factory=utc_now)
 
+    def compatibility_key(self) -> tuple[object, ...]:
+        return (
+            self.corpus_hash,
+            self.embedding_provider,
+            self.embedding_model,
+            self.dimensions,
+            self.distance_strategy,
+            self.ingestion_version,
+            self.chunk_count,
+        )
+
 
 @dataclass(frozen=True, slots=True)
 class FileIngestionResult:

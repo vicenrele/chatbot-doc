@@ -18,12 +18,12 @@ class ConfigurationError(ValueError):
 class Settings:
     documents_path: Path = Path("data/documents")
     index_path: Path = Path("data/vector_store")
-    chat_model: str = ""
-    embedding_model: str = ""
-    embedding_provider: str = "configured"
-    chat_provider: str = "configured"
+    chat_model: str = "llama3.2"
+    embedding_model: str = "nomic-embed-text"
+    embedding_provider: str = "ollama"
+    chat_provider: str = "ollama"
     retrieval_k: int = 4
-    retrieval_score_threshold: float = 0.7
+    retrieval_score_threshold: float = 0.4
     max_file_size_bytes: int = 10_000_000
     max_file_count: int = 100
     max_question_length: int = 2_000
@@ -39,10 +39,10 @@ class Settings:
         settings = cls(
             documents_path=Path(values.get("DOCUMENTS_PATH", "data/documents")),
             index_path=Path(values.get("VECTOR_STORE_PATH", "data/vector_store")),
-            chat_model=values.get("CHAT_MODEL", ""),
-            embedding_model=values.get("EMBEDDING_MODEL", ""),
-            embedding_provider=values.get("EMBEDDING_PROVIDER", "configured"),
-            chat_provider=values.get("CHAT_PROVIDER", "configured"),
+            chat_model=values.get("CHAT_MODEL", "llama3.2"),
+            embedding_model=values.get("EMBEDDING_MODEL", "nomic-embed-text"),
+            embedding_provider=values.get("EMBEDDING_PROVIDER", "ollama"),
+            chat_provider=values.get("CHAT_PROVIDER", "ollama"),
             retrieval_k=_integer(values, "RETRIEVAL_K", 4),
             retrieval_score_threshold=_float(values, "RETRIEVAL_SCORE_THRESHOLD", 0.7),
             max_file_size_bytes=_integer(values, "MAX_FILE_SIZE_BYTES", 10_000_000),
@@ -69,6 +69,10 @@ class Settings:
             raise ConfigurationError("EMBEDDING_MODEL is required")
         if not self.chat_model:
             raise ConfigurationError("CHAT_MODEL is required")
+        if self.chat_provider not in {"ollama", "openai"}:
+            raise ConfigurationError("CHAT_PROVIDER must be ollama or openai")
+        if self.embedding_provider not in {"ollama", "huggingface", "openai"}:
+            raise ConfigurationError("EMBEDDING_PROVIDER must be ollama, huggingface, or openai")
 
 
 def _integer(values: Mapping[str, str], name: str, default: int) -> int:

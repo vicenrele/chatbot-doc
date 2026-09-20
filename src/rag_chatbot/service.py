@@ -31,3 +31,22 @@ def build_index(settings: Settings, embeddings: Embeddings) -> BuildResult:
     )
     SnapshotStore(settings.index_path).build(chunks, embeddings, manifest)
     return BuildResult(manifest, tuple(results))
+
+
+def ensure_index(settings: Settings, embeddings: Embeddings) -> BuildResult:
+    settings.validate()
+    chunks, results = ingest_directory(settings.documents_path, settings)
+    manifest = manifest_for(
+        corpus_hash(settings.documents_path, settings),
+        settings.embedding_provider,
+        settings.embedding_model,
+        dimension_for(embeddings),
+        settings.ingestion_version,
+        len(chunks),
+    )
+    snapshot = SnapshotStore(settings.index_path)
+    if snapshot.is_compatible(manifest):
+        manifest = snapshot.manifest()
+    else:
+        snapshot.build(chunks, embeddings, manifest)
+    return BuildResult(manifest, tuple(results))

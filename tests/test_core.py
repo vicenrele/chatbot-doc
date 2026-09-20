@@ -18,7 +18,20 @@ class FakeUpload:
 
 def test_settings_require_model_names() -> None:
     with pytest.raises(ConfigurationError, match="EMBEDDING_MODEL"):
-        Settings.from_env({"CHAT_MODEL": "chat"})
+        Settings.from_env({"CHAT_MODEL": "chat", "EMBEDDING_MODEL": ""})
+
+
+def test_local_settings_do_not_require_openai_key() -> None:
+    settings = Settings.from_env(
+        {
+            "CHAT_PROVIDER": "ollama",
+            "CHAT_MODEL": "llama3.2",
+            "EMBEDDING_PROVIDER": "ollama",
+            "EMBEDDING_MODEL": "nomic-embed-text",
+        }
+    )
+    assert settings.chat_provider == "ollama"
+    assert settings.embedding_provider == "ollama"
 
 
 def test_markdown_preserves_title_and_deterministic_chunks(tmp_path: Path) -> None:

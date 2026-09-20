@@ -12,11 +12,11 @@ from langchain_core.embeddings import Embeddings
 from rag_chatbot.config import ConfigurationError, Settings
 from rag_chatbot.domain import IndexManifest, RetrievedSource
 from rag_chatbot.generation import Answer, GenerationError, generate_answer
-from rag_chatbot.index import IndexCompatibilityError, SnapshotStore, dimension_for, manifest_for
-from rag_chatbot.ingestion import corpus_hash, save_uploaded_files
+from rag_chatbot.index import IndexCompatibilityError, SnapshotStore
+from rag_chatbot.ingestion import save_uploaded_files
 from rag_chatbot.providers import create_runtime
 from rag_chatbot.retrieval import RetrievalError, RetrievalSettings, retrieve
-from rag_chatbot.service import build_index
+from rag_chatbot.service import build_index, ensure_index
 
 
 def main() -> None:
@@ -79,17 +79,8 @@ def _answer_question(settings: Settings, question: str) -> Answer:
         )
     try:
         embeddings, model = _load_runtime(settings)
-        snapshot = SnapshotStore(settings.index_path)
-        current_manifest = snapshot.manifest()
-        expected_manifest = manifest_for(
-            corpus_hash(settings.documents_path, settings),
-            current_manifest.embedding_provider,
-            current_manifest.embedding_model,
-            dimension_for(embeddings),
-            current_manifest.ingestion_version,
-            current_manifest.chunk_count,
-        )
-        store = _load_index(str(settings.index_path), expected_manifest, embeddings)
+        index_result = ensure_index(settings, embeddings)
+        store = _load_index(str(settings.index_path), index_result.manifest, embeddings)
         sources = retrieve(
             store,
             question,
@@ -102,9 +93,11 @@ def _answer_question(settings: Settings, question: str) -> Answer:
         return generate_answer(model, question, sources)
     except (IndexCompatibilityError, RetrievalError, GenerationError, ConfigurationError) as error:
         return Answer(f"The request could not be completed: {error}", (), False)
-    except FileNotFoundError:
+    except (FileNotFoundError, OSError, ValueError):
         return Answer(
-            "No compatible document index is available. Build the index first.", (), False
+            "The document index could not be prepared. Check the documents and model configuration.",
+            (),
+            False,
         )
 
 

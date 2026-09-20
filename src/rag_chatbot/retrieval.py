@@ -16,7 +16,7 @@ class RetrievalError(RuntimeError):
 @dataclass(frozen=True, slots=True)
 class RetrievalSettings:
     k: int = 4
-    score_threshold: float = 0.7
+    score_threshold: float = 0.4
     max_context_characters: int = 24_000
 
 
